@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Maker</title>
+    <link rel="shortcut icon" href="/Assets/bestresumetemp.png" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .resume-template {
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .resume-template.selected {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px #6366f1;
+        }
+        
+        /* General Resume Content Styles */
+        .resume-content h3.section-title, .resume-content h4 {
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .resume-content p, .resume-content ul, .resume-content span, .resume-content li {
+            font-size: 10px;
+        }
+        .resume-content h2 {
+             font-size: 24px;
+        }
+        .resume-content h1, .resume-content h2, .resume-content h3, .resume-content h4, .resume-content h5 {
+            margin-bottom: 0.5rem;
+        }
+        .resume-content ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 0.5rem;
+        }
+        .resume-content ul li::before {
+            content: "•";
+            color: #4f46e5;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+
+        /* Template: Double Column */
+        .template-double-column {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+        .template-double-column .main-column {
+            padding-right: 1.5rem;
+        }
+        .template-double-column .sidebar {
+            background-color: #f3f4f6;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+        }
+        .template-double-column .section-title {
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Template: Ivy League */
+        .template-ivy-league .header {
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #d1d5db;
+        }
+        .template-ivy-league .section {
+            margin-top: 1.5rem;
+        }
+        .template-ivy-league .section-title {
+            color: #1f2937;
+            border-bottom: 1px solid #1f2937;
+            padding-bottom: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        .template-ivy-league .section-content {
+            padding-left: 0;
+        }
+
+        /* Template: Elegant */
+        .template-elegant {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 0;
+        }
+        .template-elegant .main-column {
+            padding: 1.5rem;
+        }
+        .template-elegant .sidebar {
+            background-color: #1f2937;
+            color: white;
+            padding: 1.5rem;
+        }
+        .template-elegant .section-title {
+            color: white;
+            border-bottom: 2px solid #4b5563;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .template-elegant .section-title-main {
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .template-elegant .section-content {
+            padding-left: 0;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .template-card .preview-box {
+            height: 150px;
+            width: 100%;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            position: relative;
+            background-image: linear-gradient(to bottom right, #f0f4ff, #e2e8f0);
+        }
+        .template-card .double-column-preview {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            height: 100%;
+            width: 100%;
+        }
+        .template-card .double-column-preview .main {
+            padding: 1rem;
+        }
+        .template-card .double-column-preview .sidebar {
+            background-color: #e5e7eb;
+            padding: 1rem;
+        }
+        .template-card .elegant-preview {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            height: 100%;
+            width: 100%;
+        }
+        .template-card .elegant-preview .main {
+            padding: 1rem;
+        }
+        .template-card .elegant-preview .sidebar {
+            background-color: #1f2937;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+      <!-- Header -->
+ <header class="bg-white sticky top-0 z-50 shadow-sm">
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+
+      <!-- 🔰 Brand -->
+      <a href="#" class="text-2xl font-bold text-gray-900">Resume Maker</a>
+
+      <!-- ☰ Hamburger Button (mobile only) -->
+      <button id="menuToggle" class="sm:hidden text-gray-800 focus:outline-none">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      <!-- 📱 Menu List -->
+      <div id="mobileMenu" class="hidden sm:flex flex-col sm:flex-row absolute sm:static top-full left-0 w-full sm:w-auto bg-white sm:bg-transparent shadow sm:shadow-none px-4 py-4 sm:p-0 space-y-3 sm:space-y-0 sm:space-x-6">
+
+        <a href="#features" class="block text-gray-700 hover:text-indigo-600 transition font-medium">Features</a>
+        
+        <a href="login.html" class="block text-gray-700 hover:text-indigo-600 transition font-medium">Login</a>
+        <a href="#how-it-works"
+           class="block text-center sm:inline-block px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow hover:bg-indigo-700 transition">
+          Get Started
+        </a>
+      </div>
+      
+
+    </nav>
+
+  </header>
+    <script>
+    const menuToggle = document.getElementById('menuToggle');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    menuToggle.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+  </script>
+<!-- Main Content -->
+    <div id="loginModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+      <h2 class="text-lg font-semibold mb-4 text-red-600">Login Required</h2>
+      <p class="mb-4 text-gray-600">Please login first to continue.</p>
+      <button
+        onclick="redirectToLogin()"
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Login Now
+      </button>
+    </div>
+  </div>
+  <script>
+    function handleProtectedClick() {
+      const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+      if (isLoggedIn) {
+        window.location.href = "main.html";
+      } else {
+        document.getElementById("loginModal").classList.remove("hidden");
+      }
+    }
+
+    function redirectToLogin() {
+      window.location.href = "login.html";
+    }
+  </script>
+<section class="bg-white py-20 md:py-32">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-12">
+                <div class="w-full md:w-1/2 text-center md:text-left">
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
+                        Craft Your Professional <span class="text-indigo-600">Resume</span> in Minutes
+                    </h1>
+                    <p class="mt-6 text-lg sm:text-xl text-gray-600 max-w-xl mx-auto md:mx-0">
+                        Stand out from the crowd and land your dream job with a polished, modern resume that gets you noticed.
+                    </p>
+                    <div class="mt-10 flex flex-col sm:flex-row justify-center md:justify-start gap-4">
+                        <a href="login.html" class="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-indigo-600 rounded-lg shadow-lg hover:bg-indigo-700 transition-transform duration-200 transform hover:scale-105">
+                            Create My Free Resume
+                        </a>
+                        <a href="#landing-page-85" class="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-indigo-600 bg-indigo-100 rounded-lg shadow hover:bg-indigo-200 transition-colors duration-200">
+                            View Templates
+                        </a>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 flex justify-center mt-12 md:mt-0">
+                    <!-- Placeholder for a resume mock-up image -->
+                    <img src="/Assets/bestresumetemp.png" alt="A professional resume mock-up" class="w-full max-w-sm md:max-w-md lg:max-w-lg rounded-lg shadow-2xl transform transition-transform duration-500 hover:scale-105">
+                </div>
+            </div>
+        </section>
+
+ <section id="features" class="py-20 md:py-24 bg-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900">
+                    Everything You Need to Get Hired
+                </h2>
+                <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+                    Our platform gives you the tools to create a resume that stands out and tells your professional story effectively.
+                </p>
+
+                <div class="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Feature Card 1 -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200 transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl">
+                        <div class="text-indigo-600 mb-4">
+                            <i data-lucide="layout-template" class="w-12 h-12 mx-auto"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900">Professionally Designed Templates</h3>
+                        <p class="mt-3 text-gray-600">
+                            Choose from a variety of modern, recruiter-approved templates tailored for every industry.
+                        </p>
+                    </div>
+
+                    <!-- Feature Card 2 -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200 transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl">
+                        <div class="text-indigo-600 mb-4">
+                            <i data-lucide="edit" class="w-12 h-12 mx-auto"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900">Easy-to-Use Editor</h3>
+                        <p class="mt-3 text-gray-600">
+                            Our intuitive editor makes customizing your resume a breeze. No design skills required.
+                        </p>
+                    </div>
+
+                    <!-- Feature Card 3 -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200 transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl">
+                        <div class="text-indigo-600 mb-4">
+                            <i data-lucide="bot" class="w-12 h-12 mx-auto"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900">AI-Powered Suggestions</h3>
+                        <p class="mt-3 text-gray-600">
+                            Get smart suggestions for keywords and phrases to make your resume shine.
+                        </p>
+                    </div>
+
+                    <!-- Feature Card 4 -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200 transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl">
+                        <div class="text-indigo-600 mb-4">
+                            <i data-lucide="file-text" class="w-12 h-12 mx-auto"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900">Download in PDF</h3>
+                        <p class="mt-3 text-gray-600">
+                            Instantly download your finished resume as a high-quality PDF, ready to share with employers.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>  
+        
+<section id="how-it-works" class="py-20 md:py-24">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900">
+                    Simple, Fast, and Effective
+                </h2>
+                <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+                    Create a professional resume in three easy steps.
+                </p>
+
+                <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-12">
+                    <!-- Step 1 -->
+                     <div class="flex flex-col items-center">
+                        <div class="relative flex items-center justify-center w-20 h-20 bg-indigo-600 text-white rounded-full text-3xl font-bold">
+                            1
+                        </div>
+                        <h3 class="mt-6 text-2xl font-bold text-gray-900">Fill in Your Details</h3>
+                        <p class="mt-2 text-gray-600 max-w-sm">
+                            Enter your professional experience, education, and skills into our easy-to-use form.
+                        </p>
+                    </div>
+
+                    <!-- Step 2 -->
+                   
+                    <div class="flex flex-col items-center">
+                        <div class="relative flex items-center justify-center w-20 h-20 bg-indigo-600 text-white rounded-full text-3xl font-bold">
+                            2
+                        </div>
+                        <h3 class="mt-6 text-2xl font-bold text-gray-900">Choose a Template</h3>
+                        <p class="mt-2 text-gray-600 max-w-sm">
+                            Browse our extensive collection of templates and pick the one that best suits your style.
+                        </p>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative flex items-center justify-center w-20 h-20 bg-indigo-600 text-white rounded-full text-3xl font-bold">
+                            3
+                        </div>
+                        <h3 class="mt-6 text-2xl font-bold text-gray-900">Download and Share</h3>
+                        <p class="mt-2 text-gray-600 max-w-sm">
+                            Download your finished resume as a PDF and start applying for jobs instantly.
+                        </p>
+                    </div>
+                    
+                </div><br><br>
+                <a href="#landing-page-85" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow hover:bg-indigo-700 transition-colors duration-200">
+                    Get Started
+                </a>
+            </div>
+        </section>    
+        
+        
+        <div id="popupOverlay" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded-lg shadow-xl text-center w-80 animate-fade-in">
+      <h2 class="text-xl font-semibold mb-4">You must login first</h2>
+      <p class="text-gray-600 mb-6">Redirecting to login in 3 seconds...</p>
+      <button onclick="destroyPopup()" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+        OK
+      </button>
+    </div>
+  </div>
+    <!-- Landing Page -->
+    <div id="landing-page-85" class="min-h-screen flex flex-col justify-center items-center p-4">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">Resume Builder</h1>
+        <p class="text-lg text-gray-600 mb-8 max-w-2xl text-center">Select a template to begin building your professional resume. Click on any template to start editing your information immediately.</p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
+            <!-- Template 1: Double Column -->
+            <div class="template-card resume-template bg-white rounded-xl shadow-md hover:shadow-2xl transition-shadow p-6 text-center border-2 border-transparent hover:border-indigo-500" data-template="double-column">
+                <div class="preview-box">
+                    <div class="double-column-preview">
+                        <div class="main">
+                            <div class="h-4 w-3/4 bg-gray-300 rounded mb-2"></div>
+                            <div class="h-2 w-1/2 bg-gray-200 rounded mb-4"></div>
+                            <div class="h-2 w-full bg-gray-200 rounded mb-1"></div>
+                            <div class="h-2 w-5/6 bg-gray-200 rounded mb-4"></div>
+                            <div class="h-2 w-full bg-gray-200 rounded mb-1"></div>
+                            <div class="h-2 w-5/6 bg-gray-200 rounded mb-4"></div>
+                        </div>
+                        <div class="sidebar">
+                            <div class="h-2 w-full bg-gray-300 rounded mb-1"></div>
+                            <div class="h-2 w-2/3 bg-gray-300 rounded mb-4"></div>
+                            <div class="h-2 w-full bg-gray-300 rounded mb-1"></div>
+                            <div class="h-2 w-2/3 bg-gray-300 rounded mb-4"></div>
+                            <div class="h-2 w-full bg-gray-300 rounded mb-1"></div>
+                            <div class="h-2 w-2/3 bg-gray-300 rounded mb-4"></div>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="font-semibold text-gray-800 mt-4 text-xl">Double Column</h3>
+                <p class="text-sm text-gray-500 mt-2">A modern and clean two-column layout for easy scannability.</p>
+                <button onclick="showPopup()" class="mt-4 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">Customize This Template</button>
+            </div>
+
+            <!-- Template 2: Ivy League -->
+            <div class="template-card resume-template bg-white rounded-xl shadow-md hover:shadow-2xl transition-shadow p-6 text-center border-2 border-transparent hover:border-indigo-500" data-template="ivy-league">
+                <div class="preview-box">
+                    <div class="p-4">
+                        <div class="h-4 w-1/2 bg-gray-800 rounded mb-2"></div>
+                        <div class="h-2 w-full bg-gray-500 rounded mb-4"></div>
+                        <div class="h-0.5 w-full bg-gray-300 my-4"></div>
+                        <div class="h-2 w-full bg-gray-400 rounded mb-1"></div>
+                        <div class="h-2 w-5/6 bg-gray-400 rounded mb-4"></div>
+                        <div class="h-2 w-full bg-gray-400 rounded mb-1"></div>
+                        <div class="h-2 w-5/6 bg-gray-400 rounded mb-4"></div>
+                    </div>
+                </div>
+                <h3 class="font-semibold text-gray-800 mt-4 text-xl">Ivy League</h3>
+                <p class="text-sm text-gray-500 mt-2">A timeless, single-column design with a focus on clear typography.</p>
+                <button onclick="showPopup()" class="mt-4 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">Customize This Template</button>
+            </div>
+
+            <!-- Template 3: Elegant -->
+            <div class="template-card resume-template bg-white rounded-xl shadow-md hover:shadow-2xl transition-shadow p-6 text-center border-2 border-transparent hover:border-indigo-500" data-template="elegant">
+                <div class="preview-box">
+                    <div class="elegant-preview">
+                        <div class="main">
+                            <div class="h-4 w-3/4 bg-gray-700 rounded mb-2"></div>
+                            <div class="h-2 w-1/2 bg-gray-400 rounded mb-4"></div>
+                            <div class="h-2 w-full bg-gray-400 rounded mb-1"></div>
+                            <div class="h-2 w-5/6 bg-gray-400 rounded mb-4"></div>
+                        </div>
+                        <div class="sidebar">
+                            <div class="rounded-full bg-gray-400 w-12 h-12 mx-auto mb-4"></div>
+                            <div class="h-2 w-2/3 bg-gray-300 rounded mb-1"></div>
+                            <div class="h-2 w-full bg-gray-300 rounded mb-4"></div>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="font-semibold text-gray-800 mt-4 text-xl">Elegant</h3>
+                <p class="text-sm text-gray-500 mt-2">A bold design with a professional sidebar to highlight key details.</p>
+                <button onclick="showPopup()" class="mt-4 px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">Customize This Template</button>
+            </div>
+        </div>
+    </div>
+<!-- Final CTA Section -->
+        <section class="py-20 md:py-24 bg-indigo-600 text-white text-center">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl md:text-4xl font-extrabold">
+                    Ready to Land Your Dream Job?
+                </h2>
+                <p class="mt-4 text-lg opacity-90 max-w-2xl mx-auto">
+                    Join thousands of satisfied job seekers who have used Resume Maker to create stunning resumes and get hired.
+                </p>
+                <a href="#landing-page-85" class="mt-8 inline-flex items-center justify-center px-10 py-4 text-lg font-medium text-indigo-600 bg-white rounded-lg shadow-lg hover:bg-gray-100 transition-transform duration-200 transform hover:scale-105">
+                    Start Building My Resume
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-300 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2025 Resume Maker. All rights reserved [Aman Choudhary❤️].</p>
+        </div>
+    </footer>
+    <!-- Main App Section (Initially hidden) -->
+    <div id="main-app" class="container mx-auto flex flex-col lg:flex-row gap-8 hidden">
+        <!-- Input Form Section -->
+        <div id="form-container" class="lg:w-1/2 p-6 bg-white shadow-xl rounded-2xl">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Build Your Resume</h2>
+            
+            <!-- Stepper Navigation -->
+            <div class="flex flex-wrap justify-between items-center mb-6 text-sm font-medium text-gray-500">
+                <div id="step-1-nav" class="step-nav active text-indigo-600 cursor-pointer">Personal Info</div>
+                <div id="step-2-nav" class="step-nav cursor-pointer">Education</div>
+                <div id="step-3-nav" class="step-nav cursor-pointer">Work Experience</div>
+                <div id="step-4-nav" class="step-nav cursor-pointer">Skills</div>
+                <div id="step-5-nav" class="step-nav cursor-pointer">Projects</div>
+                <div id="step-6-nav" class="step-nav cursor-pointer">Portfolio</div>
+                <div id="step-7-nav" class="step-nav cursor-pointer">Certifications</div>
+                <div id="step-8-nav" class="step-nav cursor-pointer">Templates</div>
+            </div>
+            
+            <div id="form-steps">
+                <!-- Step 1: Personal Information -->
+                <div id="personal-info-step" class="step-content">
+                    <h3 class="text-lg font-semibold mb-4">Personal Information</h3>
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Full Name</label>
+                    <input type="text" id="full-name" class="w-full p-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" value="">
+                    
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" class="w-full p-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" value="">
+                    
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Contact Number</label>
+                    <input type="tel" id="contact-number" class="w-full p-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" value="">
+
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Current City</label>
+                    <input type="text" id="current-city" class="w-full p-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" value="">
+
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Gender</label>
+                    <select id="gender" class="w-full p-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                        <option value="Prefer not to say">Prefer not to say</option>
+                    </select>
+
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Languages You Know (comma-separated)</label>
+                    <input type="text" id="languages" class="w-full p-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" value="">
+                    
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Key Achievements (comma-separated, for Double Column and Elegant templates)</label>
+                    <input type="text" id="key-achievements" class="w-full p-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" value="">
+
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Professional Summary</label>
+                    <textarea id="summary" class="w-full p-2 h-24 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                
+                <!-- Step 2: Education -->
+                <div id="education-step" class="step-content hidden">
+                    <h3 class="text-lg font-semibold mb-4">Education</h3>
+                    <div id="education-container">
+                        <!-- Education items will be dynamically added here -->
+                        <div class="education-item p-4 mb-4 border border-gray-200 rounded-lg bg-gray-50">
+                            <label class="block text-sm font-medium text-gray-700">College/University</label>
+                            <input type="text" data-field="college" class="w-full p-1 mb-2 border border-gray-300 rounded-md" >
+                            
+                            <div class="grid grid-cols-2 gap-4 mb-2">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Start Year (Optional)</label>
+                                    <select data-field="startYear" class="w-full p-1 border border-gray-300 rounded-md year-dropdown"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">End Year (Optional)</label>
+                                    <select data-field="endYear" class="w-full p-1 border border-gray-300 rounded-md year-dropdown"></select>
+                                </div>
+                            </div>
+                            
+                            <label class="block text-sm font-medium text-gray-700">Degree</label>
+                            <input type="text" data-field="degree" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                            
+                            <label class="block text-sm font-medium text-gray-700">Stream (Optional)</label>
+                            <input type="text" data-field="stream" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+
+                            <label class="block text-sm font-medium text-gray-700">Performance Score</label>
+                            <div class="flex space-x-2">
+                                <input type="text" data-field="scoreValue" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                                <select data-field="scoreType" class="p-1 mb-2 border border-gray-300 rounded-md">
+                                    <option value="CGPA">CGPA</option>
+                                    <option value="Percentage">Percentage</option>
+                                </select>
+                            </div>
+                            <button class="remove-education-btn mt-2 px-3 py-1 bg-red-500 text-white rounded-lg text-sm">Remove</button>
+                        </div>
+                    </div>
+                    <button id="add-education-btn" class="w-full px-4 py-2 mt-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Add Education</button>
+                </div>
+                
+                <!-- Step 3: Work Experience -->
+                <div id="experience-step" class="step-content hidden">
+                    <h3 class="text-lg font-semibold mb-4">Work Experience</h3>
+                    <div id="experience-container">
+                        <!-- Experience items will be dynamically added here -->
+                        <div class="experience-item p-4 mb-4 border border-gray-200 rounded-lg bg-gray-50">
+                            <label class="block text-sm font-medium text-gray-700">Designation</label>
+                            <input type="text" data-field="designation" class="w-full p-1 mb-2 border border-gray-300 rounded-md" value="">
+                            <label class="block text-sm font-medium text-gray-700">Profile</label>
+                            <input type="text" data-field="profile" class="w-full p-1 mb-2 border border-gray-300 rounded-md" value="">
+                            <label class="block text-sm font-medium text-gray-700">Organization</label>
+                            <input type="text" data-field="organization" class="w-full p-1 mb-2 border border-gray-300 rounded-md" value="">
+                            <label class="block text-sm font-medium text-gray-700">Location</label>
+                            <input type="text" data-field="location" class="w-full p-1 mb-2 border border-gray-300 rounded-md" value="">
+                            
+                            <div class="flex items-center mb-2 space-x-4">
+                                <label class="flex items-center text-sm font-medium text-gray-700">
+                                    <input type="checkbox" data-field="workFromHome" class="work-from-home-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <span class="ml-2">Is work from home</span>
+                                </label>
+                                <label class="flex items-center text-sm font-medium text-gray-700">
+                                    <input type="checkbox" data-field="currentlyWorking" class="currently-working-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" >
+                                    <span class="ml-2">Currently working here</span>
+                                </label>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 mb-2">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Start Date (Optional)</label>
+                                    <input type="date" data-field="startDate" class="w-full p-1 border border-gray-300 rounded-md" value="">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">End Date (Optional)</label>
+                                    <input type="date" data-field="endDate" class="w-full p-1 border border-gray-300 rounded-md" value="" >
+                                </div>
+                            </div>
+                            
+                            <label class="block text-sm font-medium text-gray-700">Description (Optional)</label>
+                            <textarea data-field="description" class="w-full p-1 border border-gray-300 rounded-md"></textarea>
+                            <button class="remove-experience-btn mt-2 px-3 py-1 bg-red-500 text-white rounded-lg text-sm">Remove</button>
+                        </div>
+                    </div>
+                    <button id="add-experience-btn" class="w-full px-4 py-2 mt-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Add Work Experience</button>
+                </div>
+                
+                <!-- Step 4: Skills -->
+                <div id="skills-step" class="step-content hidden">
+                    <h3 class="text-lg font-semibold mb-4">Skills</h3>
+                    <div id="skills-container">
+                        <!-- Skills items will be dynamically added here -->
+                        
+                    </div>
+                    <button id="add-skills-btn" class="w-full px-4 py-2 mt-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Add Skill</button>
+                </div>
+                
+                <!-- Step 5: Projects -->
+                <div id="projects-step" class="step-content hidden">
+                    <h3 class="text-lg font-semibold mb-4">Projects</h3>
+                    <div id="projects-container">
+                        <!-- Projects will be dynamically added here -->
+                        
+                    </div>
+                    <button id="add-project-btn" class="w-full px-4 py-2 mt-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Add Project</button>
+                </div>
+                
+                <!-- Step 6: Portfolio/Work Samples -->
+                <div id="portfolio-step" class="step-content hidden">
+                    <h3 class="text-lg font-semibold mb-4">Portfolio/Work Samples</h3>
+                    <div id="portfolio-container">
+                        <!-- Portfolio items will be dynamically added here -->
+                        <div class="portfolio-item p-4 mb-4 border border-gray-200 rounded-lg bg-gray-50">
+                            <label class="block text-sm font-medium text-gray-700">Platform</label>
+                            <select data-field="platform" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                                <option value="">Select Platform</option>
+                                <option value="Analytics Vidhya">Analytics Vidhya</option>
+                                <option value="Behance">Behance</option>
+                                <option value="BitBucket">BitBucket</option>
+                                <option value="Blog">Blog</option>
+                                <option value="Blogspot">Blogspot</option>
+                                <option value="CodeChef">CodeChef</option>
+                                <option value="Dribbble">Dribbble</option>
+                                <option value="Figma">Figma</option>
+                                <option value="HackerRank">HackerRank</option>
+                                <option value="Hubpage">Hubpage</option>
+                                <option value="Kaggle">Kaggle</option>
+                                <option value="Leetcode">Leetcode</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Notion">Notion</option>
+                                <option value="Play Store">Play Store</option>
+                                <option value="Quora">Quora</option>
+                                <option value="Substack">Substack</option>
+                                <option value="Tumblr">Tumblr</option>
+                                <option value="Wix">Wix</option>
+                                <option value="Wordpress">Wordpress</option>
+                                <option value="Others">Others</option>
+                            </select>
+                            <label class="block text-sm font-medium text-gray-700">Link</label>
+                            <input type="url" data-field="link" class="w-full p-1 mb-2 border border-gray-300 rounded-md" value="https://www.behance.net/janedoe">
+                            <button class="remove-portfolio-btn mt-2 px-3 py-1 bg-red-500 text-white rounded-lg text-sm">Remove</button>
+                        </div>
+                    </div>
+                    <button id="add-portfolio-btn" class="w-full px-4 py-2 mt-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Add Portfolio Link</button>
+                </div>
+
+                <!-- Step 7: Certifications -->
+                <div id="certifications-step" class="step-content hidden">
+                    <h3 class="text-lg font-semibold mb-4">Certifications</h3>
+                    <div id="certifications-container">
+                        <div class="certification-item p-4 mb-4 border border-gray-200 rounded-lg bg-gray-50">
+                            <label class="block text-sm font-medium text-gray-700">Training Program Name</label>
+                            <input type="text" data-field="programName" class="w-full p-1 mb-2 border border-gray-300 rounded-md" value="Certified Scrum Master">
+                            <label class="block text-sm font-medium text-gray-700">Organization</label>
+                            <input type="text" data-field="organization" class="w-full p-1 mb-2 border border-gray-300 rounded-md" value="Scrum Alliance">
+                            <div class="flex items-center mb-2">
+                                <input type="checkbox" data-field="online" class="online-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" checked>
+                                <label class="ml-2 text-sm text-gray-700">Online</label>
+                            </div>
+                            <label class="block text-sm font-medium text-gray-700">Location</label>
+                            <input type="text" data-field="location" class="w-full p-1 mb-2 border border-gray-300 rounded-md" value="San Francisco, CA" disabled>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Start date (Optional)</label>
+                                    <input type="date" data-field="startDate" class="w-full p-1 border border-gray-300 rounded-md" value="2022-03-01">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">End date (Optional)</label>
+                                    <input type="date" data-field="endDate" class="w-full p-1 border border-gray-300 rounded-md" value="2022-03-05">
+                                </div>
+                            </div>
+                            <div class="flex items-center mt-2">
+                                <input type="checkbox" data-field="ongoing" class="ongoing-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                <label class="ml-2 text-sm text-gray-700">Currently ongoing</label>
+                            </div>
+                            <label class="block mt-2 text-sm font-medium text-gray-700">Description (Optional)</label>
+                            <textarea data-field="description" class="w-full p-1 border border-gray-300 rounded-md">Demonstrated a comprehensive understanding of the Scrum framework, including roles, events, and artifacts.</textarea>
+                            <button class="remove-certification-btn mt-2 px-3 py-1 bg-red-500 text-white rounded-lg text-sm">Remove</button>
+                        </div>
+                    </div>
+                    <button id="add-certification-btn" class="w-full px-4 py-2 mt-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Add Certification</button>
+                </div>
+
+                <!-- Step 8: Template Selection -->
+                <div id="template-step" class="step-content hidden">
+                    <h3 class="text-lg font-semibold mb-4">Choose a Template</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div id="template-1" class="resume-template p-4 rounded-lg shadow-md bg-gray-50 flex flex-col items-center" data-template="double-column">
+                            <div class="preview-box border-none h-48 w-full double-column-preview p-0">
+                                <div class="main p-4">
+                                    <div class="h-4 w-3/4 bg-gray-300 rounded mb-2"></div>
+                                    <div class="h-2 w-1/2 bg-gray-200 rounded mb-4"></div>
+                                    <div class="h-2 w-full bg-gray-200 rounded mb-1"></div>
+                                    <div class="h-2 w-5/6 bg-gray-200 rounded mb-4"></div>
+                                </div>
+                                <div class="sidebar p-4 bg-gray-200">
+                                    <div class="h-2 w-full bg-gray-300 rounded mb-1"></div>
+                                    <div class="h-2 w-2/3 bg-gray-300 rounded mb-4"></div>
+                                </div>
+                            </div>
+                            <span class="mt-2 text-center text-sm font-medium">Double Column</span>
+                        </div>
+                        <div id="template-2" class="resume-template p-4 rounded-lg shadow-md bg-gray-50 flex flex-col items-center" data-template="ivy-league">
+                            <div class="preview-box border-none h-48 w-full p-4">
+                                <div class="h-4 w-1/2 bg-gray-800 rounded mb-2"></div>
+                                <div class="h-2 w-full bg-gray-500 rounded mb-4"></div>
+                                <div class="h-0.5 w-full bg-gray-300 my-4"></div>
+                                <div class="h-2 w-full bg-gray-400 rounded mb-1"></div>
+                                <div class="h-2 w-5/6 bg-gray-400 rounded mb-4"></div>
+                            </div>
+                            <span class="mt-2 text-center text-sm font-medium">Ivy League</span>
+                        </div>
+                        <div id="template-3" class="resume-template p-4 rounded-lg shadow-md bg-gray-50 flex flex-col items-center" data-template="elegant">
+                            <div class="preview-box border-none h-48 w-full elegant-preview p-0">
+                                <div class="main p-4">
+                                    <div class="h-4 w-3/4 bg-gray-700 rounded mb-2"></div>
+                                    <div class="h-2 w-1/2 bg-gray-400 rounded mb-4"></div>
+                                    <div class="h-2 w-full bg-gray-400 rounded mb-1"></div>
+                                    <div class="h-2 w-5/6 bg-gray-400 rounded mb-4"></div>
+                                </div>
+                                <div class="sidebar p-4 bg-gray-800">
+                                    <div class="rounded-full bg-gray-400 w-12 h-12 mx-auto mb-4"></div>
+                                    <div class="h-2 w-2/3 bg-gray-300 rounded mb-1"></div>
+                                    <div class="h-2 w-full bg-gray-300 rounded mb-4"></div>
+                                </div>
+                            </div>
+                            <span class="mt-2 text-center text-sm font-medium">Elegant</span>
+                        </div>
+                    </div>
+
+                    <h3 class="text-lg font-semibold mt-6 mb-4">PDF Download Quality</h3>
+                    <select id="pdf-quality" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="1.5">Standard Quality (Smaller File)</option>
+                        <option value="2" selected>High Quality (Default)</option>
+                        <option value="3">Print-Ready Quality (Larger File)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Navigation Buttons -->
+            <div class="flex justify-between mt-6">
+                <button id="prev-btn" class="px-6 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 hidden">Previous</button>
+                <button id="next-btn" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">Next</button>
+                <button id="download-btn" class="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 hidden">Download PDF</button>
+            </div>
+        </div>
+        
+        <!-- Resume Preview Section -->
+        <div id="preview-container" class="lg:w-1/2 p-6 bg-white shadow-xl rounded-2xl">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Resume Preview</h2>
+            <div id="resume-preview" class="resume-content p-6 border-2 border-gray-200 rounded-lg min-h-full template-double-column">
+                <!-- Resume content will be dynamically generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p class="mt-4 text-gray-700 font-semibold">Generating your PDF...</p>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 8;
+        const formSteps = document.querySelectorAll('.step-content');
+        const stepperNav = document.querySelectorAll('.step-nav');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const resumePreview = document.getElementById('resume-preview');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const landingPage = document.getElementById('landing-page');
+        const mainApp = document.getElementById('main-app');
+        const landingTemplates = document.querySelectorAll('.template-card');
+        const formTemplateCards = document.querySelectorAll('#template-step .resume-template');
+
+        // --- Data Model for Resume ---
+        let resumeData = {
+            personal: {
+                fullName: '',
+                email: '',
+                contactNumber: '',
+                currentCity: '',
+                gender: '',
+                languages: '',
+                keyAchievements: '',
+                summary: ''
+            },
+            education: [{
+                college: '',
+                startYear: '',
+                endYear: '',
+                degree: '',
+                stream: '',
+                scoreValue: '',
+                scoreType: ''
+            }],
+            experience: [{
+                designation: '',
+                profile: '',
+                organization: '',
+                location: '',
+                workFromHome: false,
+                currentlyWorking: true,
+                startDate: '',
+                endDate: '',
+                description: ''
+            }],
+            skills: [{ name: '' }, { name: '' }, { name: '' }],
+            projects: [{
+                title: '',
+                link: '',
+                ongoing: false,
+                startMonth: '',
+                endMonth: '',
+                description: ''
+            }],
+            portfolio: [{
+                platform: '',
+                link: ''
+            }],
+            certifications: [{
+                programName: ' ',
+                organization: '',
+                online: true,
+                location: '',
+                startDate: '',
+                endDate: '',
+                ongoing: false,
+                description: ''
+            }],
+            template: 'double-column'
+        };
+
+        // --- Update Functions ---
+        function updatePreview() {
+            let html = '';
+            const template = resumeData.template;
+
+            switch(template) {
+                case 'double-column':
+                    html = renderDoubleColumnTemplate();
+                    break;
+                case 'ivy-league':
+                    html = renderIvyLeagueTemplate();
+                    break;
+                case 'elegant':
+                    html = renderElegantTemplate();
+                    break;
+                default:
+                    html = renderDoubleColumnTemplate();
+            }
+
+            // Remove existing template classes and add the new one
+            resumePreview.classList.remove('template-double-column', 'template-ivy-league', 'template-elegant');
+            resumePreview.classList.add(`template-${template}`);
+            resumePreview.innerHTML = html;
+        }
+
+        // Renders the Double Column template, with checks for each section
+        function renderDoubleColumnTemplate() {
+            let html = `
+                <div class="template-double-column">
+                    <div class="main-column">
+                        <div class="header">
+                            <h2 class="text-3xl font-bold">${resumeData.personal.fullName}</h2>
+                            ${resumeData.personal.summary ? `<p class="mt-1">${resumeData.personal.summary}</p>` : ''}
+                        </div>
+            `;
+            // Check if there is data for the Experience section before rendering
+            if (resumeData.experience.some(exp => Object.values(exp).some(val => val))) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title">Experience</h3>`;
+                html += `<div class="section-content">`;
+                resumeData.experience.forEach(exp => {
+                    html += `<div class="mb-4">`;
+                    html += `<h4>${exp.designation}</h4>`;
+                    const location = exp.workFromHome ? 'Remote' : exp.location;
+                    html += `<p class="font-medium">${exp.organization} | ${location}</p>`;
+                    
+                    let dateRange = '';
+                    if (exp.currentlyWorking) {
+                        dateRange = exp.startDate;
+                    } else if (exp.startDate && exp.endDate) {
+                        dateRange = `${exp.startDate} - ${exp.endDate}`;
+                    } else if (exp.startDate) {
+                        dateRange = `${exp.startDate}`;
+                    } else if (exp.endDate) {
+                        dateRange = `${exp.endDate}`;
+                    }
+                    if (dateRange) {
+                        html += `<span class="text-xs text-gray-500">${dateRange}</span>`;
+                    }
+
+                    if (exp.description) {
+                        html += `<ul class="space-y-1">`;
+                        exp.description.split('\n').filter(Boolean).forEach(line => {
+                            html += `<li>${line.replace('-', '').trim()}</li>`;
+                        });
+                        html += `</ul>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div></div>`;
+            }
+            // Check if there is data for the Education section before rendering
+            if (resumeData.education.some(edu => Object.values(edu).some(val => val))) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title">Education</h3>`;
+                html += `<div class="section-content">`;
+                resumeData.education.forEach(edu => {
+                    html += `<div class="mb-2">`;
+                    html += `<h4>${edu.degree}</h4>`;
+                    html += `<div class="flex justify-between items-start">`;
+                    html += `<p class="font-medium">${edu.college}</p>`;
+                    
+                    let dateRange = '';
+                    if (edu.startYear && edu.endYear) {
+                        dateRange = `${edu.startYear} - ${edu.endYear}`;
+                    } else if (edu.startYear) {
+                        dateRange = `${edu.startYear}`;
+                    } else if (edu.endYear) {
+                        dateRange = `${edu.endYear}`;
+                    }
+                    if (dateRange) {
+                         html += `<span class="font-medium">${dateRange}</span>`;
+                    }
+                    
+                    html += `</div>`;
+                    if (edu.stream) {
+                        html += `<p class="text-sm text-gray-500">${edu.stream}</p>`;
+                    }
+                    if (edu.scoreValue) {
+                        html += `<p class="text-sm text-gray-500">Performance: ${edu.scoreValue} ${edu.scoreType}</p>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            // Check if there is data for the Projects section before rendering
+            if (resumeData.projects.some(proj => Object.values(proj).some(val => val))) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title">Projects</h3>`;
+                html += `<div class="section-content">`;
+                resumeData.projects.forEach(proj => {
+                    html += `<div class="mb-2">`;
+                    html += `<h4>${proj.title}</h4>`;
+                    if (proj.link) {
+                         html += `<p class="text-xs text-blue-600 underline">${proj.link}</p>`;
+                    }
+                    if (proj.description) {
+                         html += `<p class="text-sm text-gray-500 mt-1">${proj.description}</p>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            // Check if there is data for the Certifications section before rendering
+            if (resumeData.certifications.some(cert => Object.values(cert).some(val => val))) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title">Certifications</h3>`;
+                html += `<div class="section-content">`;
+                resumeData.certifications.forEach(cert => {
+                    html += `<div class="mb-2">`;
+                    html += `<h4>${cert.programName}</h4>`;
+                    html += `<p class="font-medium">${cert.organization}</p>`;
+                    if (cert.online) {
+                        html += `<p class="text-xs text-gray-500">Online</p>`;
+                    } else if (cert.location) {
+                        html += `<p class="text-xs text-gray-500">${cert.location}</p>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            html += `</div>`; // End of main-column
+
+            // Sidebar
+            html += `<div class="sidebar">`;
+            html += `<div>`;
+            html += `<p class="mt-1 text-sm">${resumeData.personal.contactNumber}</p>`;
+            html += `<p class="mt-1 text-sm">${resumeData.personal.email}</p>`;
+            html += `<p class="mt-1 text-sm">${resumeData.personal.currentCity}</p>`;
+            html += `</div>`;
+
+            // Check if there is data for Key Achievements before rendering
+            if (resumeData.personal.keyAchievements) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title">Key Achievements</h3>`;
+                html += `<ul class="space-y-1">`;
+                resumeData.personal.keyAchievements.split(',').filter(Boolean).forEach(ach => {
+                    html += `<li>${ach.trim()}</li>`;
+                });
+                html += `</ul>`;
+                html += `</div>`;
+            }
+            
+            // Check if there is data for the Skills section before rendering
+            if (resumeData.skills.length > 0) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title">Skills</h3>`;
+                const skillsList = resumeData.skills.map(s => s.name).filter(Boolean);
+                if (skillsList.length > 0) {
+                    html += `<p>${skillsList.join(', ')}</p>`;
+                }
+                html += `</div>`;
+            }
+
+            // Check if there is data for the Portfolio section before rendering
+            if (resumeData.portfolio.length > 0) {
+                 html += `<div class="mt-6">`;
+                 html += `<h3 class="section-title">Portfolio</h3>`;
+                 html += `<ul class="space-y-1">`;
+                 resumeData.portfolio.forEach(item => {
+                     html += `<li><a href="${item.link}" class="text-blue-600 underline">${item.platform}</a></li>`;
+                 });
+                 html += `</ul>`;
+                 html += `</div>`;
+            }
+
+            html += `</div>`; // End of sidebar
+            html += `</div>`; // End of template-double-column
+
+            return html;
+        }
+        
+        // Renders the Ivy League template, with checks for each section
+        function renderIvyLeagueTemplate() {
+            let html = '';
+            // Header
+            html += `<div class="template-ivy-league">`;
+            html += `<div class="header">`;
+            html += `<h2 class="text-3xl font-bold">${resumeData.personal.fullName}</h2>`;
+            const contactInfo = [resumeData.personal.contactNumber, resumeData.personal.email, resumeData.personal.currentCity].filter(Boolean).join(' | ');
+            html += `<p class="mt-1">${contactInfo}</p>`;
+            if (resumeData.personal.summary) {
+                html += `<p class="mt-4">${resumeData.personal.summary}</p>`;
+            }
+            html += `</div>`;
+            
+            // Check if there is data for the Experience section before rendering
+            if (resumeData.experience.some(exp => Object.values(exp).some(val => val))) {
+                html += `<div class="section">`;
+                html += `<h3 class="section-title">Work Experience</h3>`;
+                html += `<div class="section-content">`;
+                resumeData.experience.forEach(exp => {
+                    html += `<div class="mb-4">`;
+                    html += `<div class="flex justify-between items-start">`;
+                    html += `<h4>${exp.designation}</h4>`;
+                    const location = exp.workFromHome ? 'Remote' : exp.location;
+                    const orgLocation = [exp.organization, location].filter(Boolean).join(' | ');
+                    html += `<span class="font-medium">${orgLocation}</span>`;
+                    html += `</div>`;
+                    
+                    let dateRange = '';
+                    if (exp.currentlyWorking) {
+                        dateRange = exp.startDate;
+                    } else if (exp.startDate && exp.endDate) {
+                        dateRange = `${exp.startDate} - ${exp.endDate}`;
+                    } else if (exp.startDate) {
+                        dateRange = `${exp.startDate}`;
+                    } else if (exp.endDate) {
+                        dateRange = `${exp.endDate}`;
+                    }
+                    if (dateRange) {
+                        html += `<p class="text-sm text-gray-500">${dateRange}</p>`;
+                    }
+
+                    if (exp.description) {
+                        html += `<ul class="space-y-1">`;
+                        exp.description.split('\n').filter(Boolean).forEach(line => {
+                            html += `<li>${line.replace('-', '').trim()}</li>`;
+                        });
+                        html += `</ul>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div></div>`;
+            }
+            
+            // Check if there is data for the Education section before rendering
+            if (resumeData.education.some(edu => Object.values(edu).some(val => val))) {
+                html += `<div class="section">`;
+                html += `<h3 class="section-title">Education</h3>`;
+                html += `<div class="section-content">`;
+                resumeData.education.forEach(edu => {
+                    html += `<div class="mb-2">`;
+                    html += `<div class="flex justify-between items-start">`;
+                    html += `<h4>${edu.college}</h4>`;
+
+                    let dateRange = '';
+                    if (edu.startYear && edu.endYear) {
+                        dateRange = `${edu.startYear} - ${edu.endYear}`;
+                    } else if (edu.startYear) {
+                        dateRange = `${edu.startYear}`;
+                    } else if (edu.endYear) {
+                        dateRange = `${edu.endYear}`;
+                    }
+                    if (dateRange) {
+                         html += `<span class="font-medium">${dateRange}</span>`;
+                    }
+                    
+                    html += `</div>`;
+                    html += `<p class="font-medium">${edu.degree}</p>`;
+                    if (edu.stream) {
+                        html += `<p class="text-sm text-gray-500">${edu.stream}</p>`;
+                    }
+                    if (edu.scoreValue) {
+                        html += `<p class="text-sm text-gray-500">Performance: ${edu.scoreValue} ${edu.scoreType}</p>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            // Check if there is data for the Skills section before rendering
+            if (resumeData.skills.some(s => s.name)) {
+                html += `<div class="section">`;
+                html += `<h3 class="section-title">Skills</h3>`;
+                html += `<div class="section-content">`;
+                const skillsList = resumeData.skills.map(s => s.name).filter(Boolean);
+                if (skillsList.length > 0) {
+                    html += `<p>${skillsList.join(' | ')}</p>`;
+                }
+                html += `</div></div>`;
+            }
+
+            // Check if there is data for the Projects section before rendering
+            if (resumeData.projects.some(proj => Object.values(proj).some(val => val))) {
+                html += `<div class="section">`;
+                html += `<h3 class="section-title">Projects</h3>`;
+                html += `<div class="section-content">`;
+                resumeData.projects.forEach(proj => {
+                    html += `<div class="mb-2">`;
+                    html += `<h4>${proj.title}</h4>`;
+                    if (proj.link) {
+                         html += `<p class="text-xs text-blue-600 underline">${proj.link}</p>`;
+                    }
+                    if (proj.description) {
+                         html += `<p class="text-sm text-gray-500 mt-1">${proj.description}</p>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            // Check if there is data for the Portfolio section before rendering
+            if (resumeData.portfolio.length > 0) {
+                 html += `<div class="section">`;
+                 html += `<h3 class="section-title">Portfolio</h3>`;
+                 html += `<div class="section-content">`;
+                 resumeData.portfolio.forEach(item => {
+                     html += `<p><a href="${item.link}" class="text-blue-600 underline">${item.platform}</a></p>`;
+                 });
+                 html += `</div></div>`;
+            }
+
+             // Check if there is data for the Certifications section before rendering
+            if (resumeData.certifications.some(cert => Object.values(cert).some(val => val))) {
+                html += `<div class="section">`;
+                html += `<h3 class="section-title">Certifications</h3>`;
+                html += `<div class="section-content">`;
+                resumeData.certifications.forEach(cert => {
+                    html += `<div class="mb-2">`;
+                    html += `<h4>${cert.programName}</h4>`;
+                    html += `<p class="font-medium">${cert.organization}</p>`;
+                     if (cert.online) {
+                        html += `<p class="text-xs text-gray-500">Online</p>`;
+                    } else if (cert.location) {
+                        html += `<p class="text-xs text-gray-500">${cert.location}</p>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            html += `</div>`;
+            return html;
+        }
+        
+        // Renders the Elegant template, with checks for each section
+        function renderElegantTemplate() {
+            let html = `
+                <div class="template-elegant">
+                    <div class="main-column">
+                        <div class="header">
+                            <h2 class="text-3xl font-bold">${resumeData.personal.fullName}</h2>
+                            ${resumeData.personal.summary ? `<p class="mt-1 text-sm">${resumeData.personal.summary}</p>` : ''}
+                        </div>
+            `;
+            // Check if there is data for the Experience section before rendering
+            if (resumeData.experience.some(exp => Object.values(exp).some(val => val))) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title-main">Experience</h3>`;
+                html += `<div class="section-content">`;
+                resumeData.experience.forEach(exp => {
+                    html += `<div class="mb-4">`;
+                    html += `<h4>${exp.designation} at ${exp.organization}</h4>`;
+                    html += `<div class="flex justify-between items-start">`;
+                    html += `<p class="font-medium">${exp.profile}</p>`;
+                    
+                    let dateRange = '';
+                    if (exp.currentlyWorking) {
+                        dateRange = exp.startDate;
+                    } else if (exp.startDate && exp.endDate) {
+                        dateRange = `${exp.startDate} - ${exp.endDate}`;
+                    } else if (exp.startDate) {
+                        dateRange = `${exp.startDate}`;
+                    } else if (exp.endDate) {
+                        dateRange = `${exp.endDate}`;
+                    }
+
+                    if (dateRange) {
+                        html += `<span class="text-xs text-gray-500">${dateRange}</span>`;
+                    }
+
+                    html += `</div>`;
+                    if (exp.description) {
+                        html += `<ul class="space-y-1">`;
+                        exp.description.split('\n').filter(Boolean).forEach(line => {
+                            html += `<li>${line.replace('-', '').trim()}</li>`;
+                        });
+                        html += `</ul>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div></div>`;
+            }
+            // Check if there is data for the Education section before rendering
+            if (resumeData.education.some(edu => Object.values(edu).some(val => val))) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title-main">Education</h3>`;
+                html += `<div class="section-content">`;
+                resumeData.education.forEach(edu => {
+                    html += `<div class="mb-2">`;
+                    html += `<div class="flex justify-between items-start">`;
+                    html += `<h4>${edu.degree}</h4>`;
+                    
+                    let dateRange = '';
+                    if (edu.startYear && edu.endYear) {
+                        dateRange = `${edu.startYear} - ${edu.endYear}`;
+                    } else if (edu.startYear) {
+                        dateRange = `${edu.startYear}`;
+                    } else if (edu.endYear) {
+                        dateRange = `${edu.endYear}`;
+                    }
+                    if (dateRange) {
+                         html += `<span class="font-medium">${dateRange}</span>`;
+                    }
+                    
+                    html += `</div>`;
+                    html += `<p class="font-medium">${edu.college}</p>`;
+                    if (edu.stream) {
+                        html += `<p class="text-sm text-gray-500">${edu.stream}</p>`;
+                    }
+                    if (edu.scoreValue) {
+                        html += `<p class="text-sm text-gray-500">Performance: ${edu.scoreValue} ${edu.scoreType}</p>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            // Check if there is data for the Projects section before rendering
+            if (resumeData.projects.some(proj => Object.values(proj).some(val => val))) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title-main">Projects</h3>`;
+                html += `<div class="section-content">`;
+                resumeData.projects.forEach(proj => {
+                    html += `<div class="mb-2">`;
+                    html += `<h4>${proj.title}</h4>`;
+                    if (proj.link) {
+                         html += `<p class="text-xs text-blue-600 underline">${proj.link}</p>`;
+                    }
+                    if (proj.description) {
+                         html += `<p class="text-sm text-gray-500 mt-1">${proj.description}</p>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div></div>`;
+            }
+            
+            // Check if there is data for the Certifications section before rendering
+            if (resumeData.certifications.some(cert => Object.values(cert).some(val => val))) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title-main">Certifications</h3>`;
+                html += `<div class="section-content">`;
+                resumeData.certifications.forEach(cert => {
+                    html += `<div class="mb-2">`;
+                    html += `<h4>${cert.programName}</h4>`;
+                    html += `<p class="font-medium">${cert.organization}</p>`;
+                    if (cert.online) {
+                        html += `<p class="text-xs text-gray-500">Online</p>`;
+                    } else if (cert.location) {
+                        html += `<p class="text-xs text-gray-500">${cert.location}</p>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            html += `</div>`; // End of main-column
+
+            // Sidebar
+            html += `<div class="sidebar">`;
+            // Add a placeholder for an image if needed
+            html += `<img src="https://placehold.co/100x100/ffffff/000000?text=JD" alt="Profile Picture" class="rounded-full w-24 h-24 mx-auto mb-4">`;
+            html += `<p class="mt-1 text-sm">${resumeData.personal.contactNumber}</p>`;
+            html += `<p class="mt-1 text-sm">${resumeData.personal.email}</p>`;
+            html += `<p class="mt-1 text-sm">${resumeData.personal.currentCity}</p>`;
+            const languages = resumeData.personal.languages.split(',').filter(Boolean).map(lang => lang.trim());
+            // Check if there is data for languages before rendering
+            if (languages.length > 0) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title">Languages</h3>`;
+                html += `<p>${languages.join(' | ')}</p>`;
+                html += `</div>`;
+            }
+             // Check if there is data for Key Achievements before rendering
+            if (resumeData.personal.keyAchievements) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title">Key Achievements</h3>`;
+                html += `<ul class="text-xs list-disc pl-4 space-y-1">`;
+                resumeData.personal.keyAchievements.split(',').filter(Boolean).forEach(ach => {
+                    html += `<li>${ach.trim()}</li>`;
+                });
+                html += `</ul>`;
+                html += `</div>`;
+            }
+            // Check if there is data for the Skills section before rendering
+            if (resumeData.skills.some(s => s.name)) {
+                html += `<div class="mt-6">`;
+                html += `<h3 class="section-title">Skills</h3>`;
+                const skillsList = resumeData.skills.map(s => s.name).filter(Boolean);
+                if (skillsList.length > 0) {
+                    html += `<p>${skillsList.join(', ')}</p>`;
+                }
+                html += `</div>`;
+            }
+
+             // Check if there is data for the Portfolio section before rendering
+            if (resumeData.portfolio.length > 0) {
+                 html += `<div class="mt-6">`;
+                 html += `<h3 class="section-title">Portfolio</h3>`;
+                 html += `<ul class="text-xs list-disc pl-4 space-y-1">`;
+                 resumeData.portfolio.forEach(item => {
+                     html += `<li><a href="${item.link}" class="text-white underline">${item.platform}</a></li>`;
+                 });
+                 html += `</ul>`;
+                 html += `</div>`;
+            }
+
+            html += `</div>`; // End of sidebar
+            html += `</div>`; // End of template-elegant
+
+            return html;
+        }
+        
+        // Function to populate a year dropdown
+        function populateYearDropdown(selectElement) {
+            const currentYear = new Date().getFullYear();
+            selectElement.innerHTML = `<option value="">Year (Optional)</option>`;
+            for (let year = currentYear; year >= 1950; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                selectElement.appendChild(option);
+            }
+        }
+        
+        // Function to populate all year dropdowns
+        function populateAllYearDropdowns() {
+            document.querySelectorAll('.year-dropdown').forEach(select => {
+                populateYearDropdown(select);
+            });
+        }
+        
+        // --- Form Interaction ---
+        function showLandingPage() {
+            landingPage.classList.remove('hidden');
+            mainApp.classList.add('hidden');
+        }
+
+        function showMainApp(templateId) {
+            landingPage.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+            // Set the template and show the first step
+            setTemplate(templateId);
+            showStep(1); 
+        }
+
+        function setTemplate(templateId) {
+            resumeData.template = templateId;
+
+            // Update selection state for templates in the main form
+            formTemplateCards.forEach(card => card.classList.remove('selected'));
+            const selectedFormCard = document.querySelector(`#template-step .resume-template[data-template="${templateId}"]`);
+            if (selectedFormCard) {
+                selectedFormCard.classList.add('selected');
+            }
+             // Update selection state for templates on the landing page
+            landingTemplates.forEach(card => card.classList.remove('selected'));
+            const selectedLandingCard = document.querySelector(`#landing-page .template-card[data-template="${templateId}"]`);
+            if (selectedLandingCard) {
+                selectedLandingCard.classList.add('selected');
+            }
+
+
+            // Update the preview
+            updatePreview();
+        }
+
+        function showStep(step) {
+            formSteps.forEach((el, index) => {
+                if (index + 1 === step) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+
+            stepperNav.forEach((el, index) => {
+                el.classList.remove('text-indigo-600');
+                if (index + 1 <= step) {
+                    el.classList.add('text-indigo-600');
+                }
+            });
+
+            prevBtn.classList.toggle('hidden', step === 1);
+            nextBtn.classList.toggle('hidden', step === totalSteps);
+            downloadBtn.classList.toggle('hidden', step !== totalSteps);
+            currentStep = step;
+        }
+
+        // --- Data Binding & Event Listeners ---
+        function bindFormFields() {
+            // Personal Info - Updated to correctly handle camelCase conversion from kebab-case IDs
+            ['full-name', 'email', 'contact-number', 'current-city', 'gender', 'languages', 'key-achievements', 'summary'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', (e) => {
+                        const fieldName = e.target.id.replace(/-./g, match => match[1].toUpperCase());
+                        resumeData.personal[fieldName] = e.target.value;
+                        updatePreview();
+                    });
+                }
+            });
+
+            // Dynamic sections
+            const dynamicSections = {
+                'education': { container: 'education-container', addButton: 'add-education-btn' },
+                'experience': { container: 'experience-container', addButton: 'add-experience-btn' },
+                'skills': { container: 'skills-container', addButton: 'add-skills-btn' },
+                'projects': { container: 'projects-container', addButton: 'add-project-btn' },
+                'portfolio': { container: 'portfolio-container', addButton: 'add-portfolio-btn' },
+                'certifications': { container: 'certifications-container', addButton: 'add-certification-btn' }
+            };
+
+            for (const section in dynamicSections) {
+                document.getElementById(dynamicSections[section].addButton).addEventListener('click', () => addSectionItem(section));
+                document.getElementById(dynamicSections[section].container).addEventListener('input', (e) => updateDynamicSection(e, section));
+                document.getElementById(dynamicSections[section].container).addEventListener('click', (e) => {
+                    if (e.target.classList.contains(`remove-${section}-btn`)) {
+                        removeSectionItem(section, e.target.closest(`.${section}-item`));
+                    }
+                    if (e.target.classList.contains('online-checkbox')) {
+                        const itemElement = e.target.closest('.certification-item');
+                        const locationInput = itemElement.querySelector('[data-field="location"]');
+                        locationInput.disabled = e.target.checked;
+                        if (e.target.checked) locationInput.value = '';
+                        updateDynamicSection(e, section);
+                    }
+                    if (e.target.classList.contains('ongoing-checkbox')) {
+                        if(section === 'certifications') {
+                            const itemElement = e.target.closest('.certification-item');
+                            const endDateInput = itemElement.querySelector('[data-field="endDate"]');
+                            endDateInput.disabled = e.target.checked;
+                            if (e.target.checked) endDateInput.value = '';
+                        }
+                        if(section === 'projects') {
+                             const itemElement = e.target.closest('.project-item');
+                             const endMonthInput = itemElement.querySelector('[data-field="endMonth"]');
+                             endMonthInput.disabled = e.target.checked;
+                            if (e.target.checked) endMonthInput.value = '';
+                        }
+                        updateDynamicSection(e, section);
+                    }
+                     if (e.target.classList.contains('currently-working-checkbox')) {
+                        const itemElement = e.target.closest('.experience-item');
+                        const endDateInput = itemElement.querySelector('[data-field="endDate"]');
+                        endDateInput.disabled = e.target.checked;
+                        if (e.target.checked) endDateInput.value = '';
+                        updateDynamicSection(e, section);
+                    }
+                });
+            }
+        }
+        
+        function addSectionItem(section) {
+            const container = document.getElementById(`${section}-container`);
+            const item = document.createElement('div');
+            item.classList.add(`${section}-item`, 'p-4', 'mb-4', 'border', 'border-gray-200', 'rounded-lg', 'bg-gray-50');
+            
+            let itemHtml = '';
+            let newItemData = {};
+            
+            if (section === 'education') {
+                itemHtml = `
+                    <label class="block text-sm font-medium text-gray-700">College/University</label>
+                    <input type="text" data-field="college" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                    <div class="grid grid-cols-2 gap-4 mb-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Start Year (Optional)</label>
+                            <select data-field="startYear" class="w-full p-1 border border-gray-300 rounded-md year-dropdown"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">End Year (Optional)</label>
+                            <select data-field="endYear" class="w-full p-1 border border-gray-300 rounded-md year-dropdown"></select>
+                        </div>
+                    </div>
+                    <label class="block text-sm font-medium text-gray-700">Degree</label>
+                    <input type="text" data-field="degree" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                    <label class="block text-sm font-medium text-gray-700">Stream (Optional)</label>
+                    <input type="text" data-field="stream" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                    <label class="block text-sm font-medium text-gray-700">Performance Score</label>
+                    <div class="flex space-x-2">
+                        <input type="text" data-field="scoreValue" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                        <select data-field="scoreType" class="p-1 mb-2 border border-gray-300 rounded-md">
+                            <option value="CGPA">CGPA</option>
+                            <option value="Percentage">Percentage</option>
+                        </select>
+                    </div>
+                `;
+                 newItemData = { college: '', startYear: '', endYear: '', degree: '', stream: '', scoreValue: '', scoreType: 'CGPA' };
+            } else if (section === 'experience') {
+                itemHtml = `
+                    <label class="block text-sm font-medium text-gray-700">Designation</label>
+                    <input type="text" data-field="designation" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                    <label class="block text-sm font-medium text-gray-700">Profile</label>
+                    <input type="text" data-field="profile" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                    <label class="block text-sm font-medium text-gray-700">Organization</label>
+                    <input type="text" data-field="organization" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                    <label class="block text-sm font-medium text-gray-700">Location</label>
+                    <input type="text" data-field="location" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+
+                    <div class="flex items-center mb-2 space-x-4">
+                        <label class="flex items-center text-sm font-medium text-gray-700">
+                            <input type="checkbox" data-field="workFromHome" class="work-from-home-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                            <span class="ml-2">Is work from home</span>
+                        </label>
+                        <label class="flex items-center text-sm font-medium text-gray-700">
+                            <input type="checkbox" data-field="currentlyWorking" class="currently-working-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                            <span class="ml-2">Currently working here</span>
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Start Date (Optional)</label>
+                            <input type="date" data-field="startDate" class="w-full p-1 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">End Date (Optional)</label>
+                            <input type="date" data-field="endDate" class="w-full p-1 border border-gray-300 rounded-md">
+                        </div>
+                    </div>
+                    
+                    <label class="block text-sm font-medium text-gray-700">Description (Optional)</label>
+                    <textarea data-field="description" class="w-full p-1 border border-gray-300 rounded-md"></textarea>
+                `;
+                newItemData = { designation: '', profile: '', organization: '', location: '', workFromHome: false, currentlyWorking: false, startDate: '', endDate: '', description: '' };
+            } else if (section === 'skills') {
+                 itemHtml = `
+                    <input type="text" data-field="name" class="w-full p-1 border border-gray-300 rounded-md">
+                 `;
+                 item.classList.add('flex', 'items-center', 'mb-2');
+                 newItemData = { name: '' };
+            } else if (section === 'projects') {
+                itemHtml = `
+                    <label class="block text-sm font-medium text-gray-700">Title</label>
+                    <input type="text" data-field="title" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                    <label class="block text-sm font-medium text-gray-700">Project Link (Optional)</label>
+                    <input type="url" data-field="link" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                    <div class="flex items-center mb-2">
+                        <label class="flex items-center text-sm font-medium text-gray-700">
+                            <input type="checkbox" data-field="ongoing" class="ongoing-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                            <span class="ml-2">Currently ongoing</span>
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Start Month (Optional)</label>
+                            <input type="month" data-field="startMonth" class="w-full p-1 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">End Month (Optional)</label>
+                            <input type="month" data-field="endMonth" class="w-full p-1 border border-gray-300 rounded-md">
+                        </div>
+                    </div>
+                    <label class="block text-sm font-medium text-gray-700">Description (Optional)</label>
+                    <textarea data-field="description" class="w-full p-1 border border-gray-300 rounded-md"></textarea>
+                `;
+                newItemData = { title: '', link: '', ongoing: false, startMonth: '', endMonth: '', description: '' };
+            } else if (section === 'portfolio') {
+                itemHtml = `
+                    <label class="block text-sm font-medium text-gray-700">Platform</label>
+                    <select data-field="platform" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                        <option value="">Select Platform</option>
+                        <option value="Analytics Vidhya">Analytics Vidhya</option>
+                        <option value="Behance">Behance</option>
+                        <option value="BitBucket">BitBucket</option>
+                        <option value="Blog">Blog</option>
+                        <option value="Blogspot">Blogspot</option>
+                        <option value="CodeChef">CodeChef</option>
+                        <option value="Dribbble">Dribbble</option>
+                        <option value="Figma">Figma</option>
+                        <option value="HackerRank">HackerRank</option>
+                        <option value="Hubpage">Hubpage</option>
+                        <option value="Kaggle">Kaggle</option>
+                        <option value="Leetcode">Leetcode</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Notion">Notion</option>
+                        <option value="Play Store">Play Store</option>
+                        <option value="Quora">Quora</option>
+                        <option value="Substack">Substack</option>
+                        <option value="Tumblr">Tumblr</option>
+                        <option value="Wix">Wix</option>
+                        <option value="Wordpress">Wordpress</option>
+                        <option value="Others">Others</option>
+                            </select>
+                    <label class="block text-sm font-medium text-gray-700">Link</label>
+                    <input type="url" data-field="link" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                `;
+                newItemData = { platform: '', link: '' };
+            } else if (section === 'certifications') {
+                itemHtml = `
+                    <label class="block text-sm font-medium text-gray-700">Training Program Name</label>
+                    <input type="text" data-field="programName" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                    <label class="block text-sm font-medium text-gray-700">Organization</label>
+                    <input type="text" data-field="organization" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                    <div class="flex items-center mb-2">
+                        <input type="checkbox" data-field="online" class="online-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <label class="ml-2 text-sm text-gray-700">Online</label>
+                    </div>
+                    <label class="block text-sm font-medium text-gray-700">Location</label>
+                    <input type="text" data-field="location" class="w-full p-1 mb-2 border border-gray-300 rounded-md">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Start date (Optional)</label>
+                            <input type="date" data-field="startDate" class="w-full p-1 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">End date (Optional)</label>
+                            <input type="date" data-field="endDate" class="w-full p-1 border border-gray-300 rounded-md">
+                        </div>
+                    </div>
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" data-field="ongoing" class="ongoing-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <label class="ml-2 text-sm text-gray-700">Currently ongoing</label>
+                            </div>
+                    <label class="block mt-2 text-sm font-medium text-gray-700">Description (Optional)</label>
+                    <textarea data-field="description" class="w-full p-1 border border-gray-300 rounded-md"></textarea>
+                `;
+                newItemData = { programName: '', organization: '', online: false, location: '', startDate: '', endDate: '', ongoing: false, description: '' };
+            }
+            
+            itemHtml += `<button class="remove-${section}-btn mt-2 px-3 py-1 bg-red-500 text-white rounded-lg text-sm">Remove</button>`; 
+            item.innerHTML = itemHtml;
+            container.appendChild(item);
+            
+            // Populate year dropdowns for the new item
+            if (section === 'education') {
+                populateYearDropdown(item.querySelector('[data-field="startYear"]'));
+                populateYearDropdown(item.querySelector('[data-field="endYear"]'));
+            }
+
+            resumeData[section].push(newItemData); 
+            updatePreview();
+        }
+
+        function removeSectionItem(section, itemElement) {
+            const container = document.getElementById(`${section}-container`);
+            const allItems = Array.from(container.querySelectorAll(`.${section}-item`));
+            const indexToRemove = allItems.indexOf(itemElement);
+            if (indexToRemove > -1) {
+                resumeData[section].splice(indexToRemove, 1);
+                itemElement.remove();
+                updatePreview();
+            }
+        }
+        
+        function updateDynamicSection(e, section) {
+            const itemElement = e.target.closest(`.${section}-item`);
+            const container = document.getElementById(`${section}-container`);
+            const allItems = Array.from(container.querySelectorAll(`.${section}-item`));
+            const index = allItems.indexOf(itemElement);
+            
+            if (index > -1 && e.target.dataset.field) {
+                const fieldName = e.target.dataset.field;
+                if (e.target.type === 'checkbox') {
+                    resumeData[section][index][fieldName] = e.target.checked;
+                } else {
+                    resumeData[section][index][fieldName] = e.target.value;
+                }
+                updatePreview();
+            }
+        }
+
+        // --- PDF Generation ---
+        function downloadPDF() {
+            // Show loading overlay
+            loadingOverlay.style.display = 'flex';
+            
+            // Get the selected PDF quality scale
+            const pdfQuality = parseFloat(document.getElementById('pdf-quality').value);
+
+            // The resume content to be captured
+            const resumeContent = document.getElementById('resume-preview');
+            
+            // Use html2canvas to render the content as a canvas with the selected scale
+            html2canvas(resumeContent, { 
+                scale: pdfQuality, 
+                useCORS: true 
+            }).then(canvas => {
+                // Get image data from canvas
+                const imgData = canvas.toDataURL('image/jpeg', 0.9); // Use JPEG with quality for better compression
+                
+                // Initialize jsPDF
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgWidth = 210; // A4 width in mm
+                const pageHeight = 297; // A4 height in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // Add the image to the PDF, handling multiple pages if needed
+                pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                // Save the PDF
+                pdf.save('resume.pdf');
+                
+                // Hide loading overlay
+                loadingOverlay.style.display = 'none';
+            }).catch(error => {
+                console.error("PDF generation failed: ", error);
+                loadingOverlay.style.display = 'none';
+                // Add a simple message box to inform the user
+                const errorBox = document.createElement('div');
+                errorBox.classList.add('fixed', 'top-4', 'right-4', 'bg-red-500', 'text-white', 'p-4', 'rounded-lg', 'shadow-lg', 'z-50');
+                errorBox.textContent = 'Failed to generate PDF. Please try again.';
+                document.body.appendChild(errorBox);
+                setTimeout(() => errorBox.remove(), 5000);
+            });
+        }
+
+        // --- Initial setup and event listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Populate the year dropdowns for the initial education item
+            populateAllYearDropdowns();
+            
+            // Event listeners for landing page template selection
+            landingTemplates.forEach(template => {
+                template.addEventListener('click', () => {
+                    const templateId = template.dataset.template;
+                    showMainApp(templateId);
+                });
+            });
+
+            // Event listeners for stepper navigation
+            stepperNav.forEach((step, index) => {
+                step.addEventListener('click', () => {
+                    showStep(index + 1);
+                });
+            });
+
+            // Event listener for template selection on Step 8
+            formTemplateCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const templateId = card.dataset.template;
+                    setTemplate(templateId);
+                });
+            });
+
+
+            // Bind form fields and set up navigation
+            bindFormFields();
+
+            nextBtn.addEventListener('click', () => {
+                if (currentStep < totalSteps) {
+                    showStep(currentStep + 1);
+                }
+            });
+
+            prevBtn.addEventListener('click', () => {
+                if (currentStep > 1) {
+                    showStep(currentStep - 1);
+                }
+            });
+
+            downloadBtn.addEventListener('click', downloadPDF);
+
+            // Set initial selected template in the main form and preview
+            document.querySelector(`#template-step .resume-template[data-template="double-column"]`).classList.add('selected');
+            updatePreview();
+        });
+    </script>
+</body>
+</html>
